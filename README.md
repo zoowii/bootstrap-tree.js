@@ -1,4 +1,9 @@
 bootstrap-tree.js
 ===============
 
-A simple bootstrap plugin of tree
+A jQuery simple bootstrap plugin of tree
+
+**TODO**
+* A demo using this plugin with a simple web backend
+
+
