@@ -8,7 +8,5 @@ A jQuery simple bootstrap plugin of tree
 * Underscore.js
 * Backbone.js
 
-**TODO**
-* A demo using this plugin with a simple web backend
-
-
+**Examples**
+* open the index.html under folder 'examples'

@@ -1,0 +1,11 @@
+.b-tree {
+	max-height: 450px;
+  overflow-y: auto;
+  li {
+    font-size: 13px;
+    a {
+      padding-top: 4px !important;
+      padding-bottom: 4px !important;
+    }
+  }
+}
