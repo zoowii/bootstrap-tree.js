@@ -39,6 +39,8 @@
             }
         });
     };
+    var emptyFunction = function () {
+    };
     var BaseView = Backbone.View.extend({
         render: function () {
             this.$el.html(this.template(this.model instanceof Backbone.Model ? {data: this.model} : this.model));
@@ -59,10 +61,11 @@
             return this.get('available');
         },
         onClick: function () {
-            return this.get('onClick');
+            return this.get('onClick') || emptyFunction;
         },
-        onDblClick: function () {
-            return this.get('onDblClick');
+        onClickNotLeaf: function () {
+            // call on click tree node which is not leaf
+            return this.get('onClickNotLeaf') || emptyFunction;
         },
         isOpened: function () {
             return this.get('open-state') === 'open';
@@ -72,6 +75,25 @@
         },
         setClosed: function () {
             this.set('open-state', 'close');
+        },
+        getExtraButtonText: function () {
+            if (this.get('button')) {
+                return this.get('button').text || "Go";
+            } else {
+                return null;
+            }
+        },
+        getExtraButtonInfo: function () {
+            var btnInfo = this.get('button');
+            if (!btnInfo) {
+                return btnInfo;
+            }
+            btnInfo = _.extend({
+                click: emptyFunction,
+                text: 'Go',
+                extraClass: ''
+            }, btnInfo);
+            return btnInfo;
         }
     });
     var TreeNodeView = BaseView.extend({
@@ -80,11 +102,11 @@
         template: _.template(''),
         events: {
             'click a:first': 'onClick',
-            'dblclick a:first': 'onDblClick'
+            'click .tree-node-extra-btn:first': 'onClickExtraButton'
         },
         afterRender: function () {
             this.$el.html('');
-            var $a = $('<a href="#"></a>');
+            var $a = $('<a class="not-leaf-tree-node" href="#"></a>');
             // TODO: 可以通过参数定制图标
             if (this.model.isLeaf()) {
                 var $icon = $("<span class='glyphicon glyphicon-file'></span>");
@@ -102,12 +124,23 @@
             $a.append($("<span>&nbsp;</span>"));
             $a.append($text);
             this.$el.append($a);
+            var buttonText = this.model.getExtraButtonText();
+            if (buttonText) {
+                var $btn = $("<button class='btn btn-xs btn-primary tree-node-extra-btn'></button>");
+                $btn.css({
+                    'position': 'absolute',
+                    'right': 0,
+                    'margin-top': '-25px'
+                });
+                $btn.text(buttonText);
+                this.$el.append($btn);
+            }
         },
         closeTree: function () {
             this.model.setClosed();
             this.render();
         },
-        openTree: function() {
+        openTree: function () {
             this.model.setOpened();
             this.render();
             this.trigger('to-change-current-tree-node', this);
@@ -116,10 +149,9 @@
             console.log('click');
             if (this.model.isAvailable()) {
                 if (this.model.isLeaf()) {
-                    this.model.onClick()(this, this.model, function () {
-
-                    });
+                    this.model.onClick()(this, this.model, emptyFunction);
                 } else {
+                    this.model.onClickNotLeaf()(this, this.model, emptyFunction);
                     if (this.model.isOpened()) {
                         this.closeTree();
                     } else {
@@ -128,20 +160,10 @@
                 }
             }
         },
-        onDblClick: function () {
-            console.log('dbl click');
+        onClickExtraButton: function () {
+            var btnInfo = this.model.getExtraButtonInfo();
             if (this.model.isAvailable()) {
-                if (this.model.isLeaf()) {
-                    this.model.onDblClick()(this, this.model, function () {
-
-                    });
-                } else {
-                    if (this.model.isOpened()) {
-                        this.closeTree();
-                    } else {
-                        this.openTree();
-                    }
-                }
+                btnInfo.click(this, this.model, emptyFunction);
             }
         }
     });
@@ -154,9 +176,10 @@
                 },
                 onLoadedTree: function (parent, callbak) {
                 },
-                onDblClickNode: function (view, model, callback) {
+                onClickNotLeafNode: function (view, model, callback) {
                 },
-                context: null
+                context: null,
+                button: null
             }, options);
             var $tree = $(this);
             $tree.html('');
@@ -169,7 +192,8 @@
                 _.each(content, function (item) {
                     var model = new TreeNodeModel(_.extend({
                         onClick: _.bind(options.onClickNode, options.context),
-                        onDblClick: _.bind(options.onDblClickNode, options.context)
+                        onClickNotLeaf: _.bind(options.onClickNotLeafNode, options.context),
+                        button: options.button
                     }, item));
                     var view = new TreeNodeView({model: model});
                     view.on('to-change-current-tree-node', function (v) {
