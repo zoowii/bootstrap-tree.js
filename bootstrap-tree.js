@@ -130,7 +130,7 @@
         },
         onDblClick: function () {
             console.log('dbl click');
-            if (this.model.available()) {
+            if (this.model.isAvailable()) {
                 if (this.model.isLeaf()) {
                     this.model.onDblClick()(this, this.model, function () {
 
